@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mi primer Hola Mundo</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            text-align: center;
+            padding: 50px;
+        }
+
+        h1 {
+            color: #1d3557;
+        }
+
+        p {
+            color: #333;
+            font-size: 20px;
+        }
+
+        button {
+            background-color: #2cd326;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>¡Hola, mundo!</h1>
+
+    <p>Este es mi primer programa con JavaScript.</p>
+
+    <button onclick="saludar()">Pulsa aquí</button>
+
+    <p id="resultado"></p>
+
+    <script>
+        console.log("¡Hola, mundo!");
+
+        function saludar() {
+            document.getElementById("resultado").textContent =
+                "¡Enhorabuena! JavaScript está funcionando.";
+        }
+    </script>
+
+</body>
+</html>
