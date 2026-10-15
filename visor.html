@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visor de Proyectos y Código — GitHub</title>
+  
+  <!-- Highlight.js para resaltado de sintaxis -->
+  <link rel="stylesheet" id="theme-link" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  
+  <style>
+    :root {
+      --primary: #1d3557;
+      --primary-dark: #14213d;
+      --primary-light: #457b9d;
+      --accent: #2cd326;
+      --accent-hover: #24af1f;
+      --accent-subtle: #e8f8e8;
+      --danger: #e63946;
+      --bg: #f4f5f8;
+      --card-bg: #ffffff;
+      --border: #e2e5eb;
+      --text: #212529;
+      --text-muted: #6c757d;
+
+      /* Variables del visor de código */
+      --code-bg: #0d1117;
+      --code-text: #e6edf3;
+      --line-num-color: #7d8590;
+      --line-num-border: #30363d;
+      --radius: 8px;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --font-mono: "JetBrains Mono", "Fira Code", Consolas, Menlo, Monaco, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Arial, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Cabecera principal */
+    header {
+      background: linear-gradient(135deg, #1d3557 0%, #14213d 100%);
+      color: #fff;
+      padding: 1.5rem 2rem;
+      border-bottom: 3px solid var(--accent);
+    }
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .header-title h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .header-title p {
+      margin: 0.3rem 0 0;
+      opacity: 0.85;
+      font-size: 0.92rem;
+    }
+    
+    /* Barra de control / Repositorio */
+    .repo-control {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      flex-wrap: wrap;
+    }
+    .repo-control input {
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.9rem;
+      color: #333;
+      font-weight: 600;
+      min-width: 220px;
+    }
+    .repo-control select {
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 0.45rem 0.6rem;
+      font-size: 0.9rem;
+      color: #333;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+      text-decoration: none;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: #14213d; }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+    .btn-secondary { background: rgba(255, 255, 255, 0.2); color: #fff; }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.35); }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover {
+      background: #e9ecef;
+    }
+
+    /* Layout principal */
+    main {
+      max-width: 1400px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Paneles / Tarjetas */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 0.9rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      background: #fafbfc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-header h2, .card-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-body {
+      padding: 1.2rem;
+    }
+
+    /* Sidebar / Proyectos y Archivos */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    /* Selector de pestañas */
+    .tabs-nav {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1rem;
+      gap: 0.5rem;
+    }
+    .tab-btn {
+      padding: 0.5rem 0.8rem;
+      border: none;
+      background: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Lista de Proyectos (Tarjetas / Pills) */
+    .project-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .project-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 0.9rem;
+      background: #fafbfc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .project-card:hover {
+      border-color: var(--primary-light);
+      background: #f0f4f8;
+    }
+    .project-card.active {
+      border-color: var(--accent);
+      background: var(--accent-subtle);
+      font-weight: 600;
+    }
+    .project-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .project-name {
+      font-size: 0.95rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .project-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .project-actions {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    /* Buscador de archivos */
+    .search-box {
+      position: relative;
+      margin-bottom: 0.8rem;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 0.45rem 0.75rem 0.45rem 2rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+    }
+    .search-box svg {
+      position: absolute;
+      left: 0.65rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      fill: var(--text-muted);
+    }
+
+    /* Árbol de archivos */
+    .file-tree {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 520px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.88rem;
+      border-bottom: 1px solid #f0f0f4;
+      cursor: pointer;
+      transition: background 0.12s ease;
+      font-family: var(--font-mono);
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-item:hover {
+      background: #f4f7fb;
+      color: var(--primary);
+    }
+    .file-item.active {
+      background: #eef8ee;
+      border-left: 3px solid var(--accent);
+      font-weight: 600;
+      color: #14213d;
+    }
+    .file-name-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-badge {
+      font-size: 0.68rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .badge-ts { background: #3178c6; color: #fff; }
+    .badge-js { background: #f7df1e; color: #000; }
+    .badge-html { background: #e34f26; color: #fff; }
+    .badge-css { background: #1572b6; color: #fff; }
+    .badge-json { background: #009688; color: #fff; }
+    .badge-md { background: #083fa1; color: #fff; }
+    .badge-other { background: #6c757d; color: #fff; }
+
+    /* Visor / Pestañas de Vista */
+    .viewer-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 650px;
+    }
+    .view-mode-tabs {
+      display: flex;
+      background: #eef1f6;
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem 0;
+      gap: 0.4rem;
+    }
+    .view-tab-btn {
+      padding: 0.55rem 1.1rem;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: transparent;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+    .view-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.6);
+      color: var(--primary);
+    }
+    .view-tab-btn.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      border-color: var(--border);
+      border-bottom-color: var(--card-bg);
+      margin-bottom: -1px;
+    }
+
+    .viewer-toolbar {
+      padding: 0.75rem 1.2rem;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .file-breadcrumbs {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      word-break: break-all;
+    }
+    .file-breadcrumbs span.sep { color: var(--text-muted); }
+    .viewer-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    /* Contenedor de Código y Números de línea */
+    .code-wrapper {
+      position: relative;
+      background: var(--code-bg);
+      color: var(--code-text);
+      flex: 1;
+      display: flex;
+      overflow: auto;
+    }
+    .code-container {
+      margin: 0;
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--code-text);
+      display: flex;
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .line-numbers {
+      padding: 1.2rem 0.8rem 1.2rem 1rem;
+      text-align: right;
+      color: var(--line-num-color);
+      user-select: none;
+      border-right: 1px solid var(--line-num-border);
+      font-size: 0.92rem;
+      font-family: var(--font-mono);
+      white-space: pre;
+      line-height: inherit;
+    }
+    .code-content {
+      flex: 1;
+      padding: 1.2rem 1.2rem !important;
+      margin: 0;
+      background: transparent !important;
+      color: var(--code-text) !important;
+      overflow-x: auto;
+      white-space: pre;
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      line-height: inherit;
+    }
+
+    /* Contenedor de Ejecución / Vista Previa */
+    .preview-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+    }
+    .preview-header {
+      padding: 0.6rem 1rem;
+      background: #f1f3f7;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .preview-device-buttons {
+      display: flex;
+      gap: 0.2rem;
+      background: #e2e5eb;
+      padding: 0.2rem;
+      border-radius: 6px;
+    }
+    .btn-device {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.78rem;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .btn-device.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .preview-stage {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      background: #e9ecf2;
+      padding: 1rem;
+      min-height: 520px;
+    }
+    .preview-frame-container {
+      width: 100%;
+      max-width: 100%;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: max-width 0.25s ease;
+    }
+    #preview-frame {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      border: none;
+      background: #ffffff;
+    }
+
+    /* Consola integrada en preview */
+    .preview-console {
+      border-top: 1px solid var(--border);
+      background: #1e1e24;
+      color: #dcdcdc;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      max-height: 140px;
+      overflow-y: auto;
+      padding: 0.5rem 0.8rem;
+    }
+    .console-header {
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 0.3rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .console-entry { margin: 0.15rem 0; word-break: break-all; }
+    .console-log { color: #85e89d; }
+    .console-error { color: #f97583; }
+
+    /* Estado / Mensajes */
+    .status-box {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .status-box.error {
+      color: var(--danger);
+      background: #fff5f5;
+    }
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(44, 211, 38, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 0.8rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Modal / Token / Repos */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-card {
+      background: #fff;
+      border-radius: var(--radius);
+      max-width: 550px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+
+    /* Utilidades */
+    .hidden { display: none !important; }
+    .badge-count {
+      background: #e2e5eb;
+      color: #495057;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1d3557;
+      color: #fff;
+      padding: 0.75rem 1.2rem;
+      border-radius: 6px;
+      border-left: 4px solid var(--accent);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 2000;
+      font-size: 0.9rem;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-container">
+    <div class="header-title">
+      <h1>
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        Visor de Código & Proyectos
+      </h1>
+      <p id="header-desc">Explorando repositorio y proyectos en GitHub</p>
+    </div>
+
+    <div class="repo-control">
+      <input type="text" id="input-repo" placeholder="usuario/repositorio" spellcheck="false" title="Introduce usuario/repositorio">
+      <select id="select-branch" title="Seleccionar rama"></select>
+      <button class="btn btn-primary" id="btn-load-repo">Explorar</button>
+      <button class="btn btn-secondary btn-sm" id="btn-user-repos" title="Ver todos los repos de este usuario">Repos</button>
+      <button class="btn btn-secondary btn-sm" id="btn-token" title="Configurar Token (evita rate limit)">🔑 Token</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Barra lateral: Proyectos y Ficheros -->
+  <aside class="sidebar">
+    <!-- Selector manual de URL directa -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Enlace directo GitHub</h3>
+      </div>
+      <div class="card-body" style="padding: 0.8rem 1rem;">
+        <div style="display:flex; gap:0.4rem;">
+          <input type="text" id="url-directa" placeholder="https://github.com/.../blob/..." style="flex:1; padding:0.4rem 0.6rem; font-size:0.85rem; border:1px solid var(--border); border-radius:4px;">
+          <button class="btn btn-primary btn-sm" id="btn-cargar-directa">Ver</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de proyectos detectados -->
+    <div class="card">
+      <div class="card-header">
+        <h3>
+          📁 Proyectos Detectados
+          <span class="badge-count" id="count-projects">0</span>
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="project-list" id="project-list">
+          <!-- Cargado dinámicamente -->
+        </div>
+
+        <div class="search-box">
+          <svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+          <input type="text" id="file-search" placeholder="Filtrar archivos (ej. script.ts, .css)...">
+        </div>
+
+        <ul class="file-tree" id="file-tree">
+          <li class="status-box">Cargando árbol de archivos...</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Contenido principal: Visor de Código & Ejecutor -->
+  <section class="card viewer-card">
+    <!-- Pestañas de Modo: Código / Ejecución -->
+    <div class="view-mode-tabs">
+      <button class="view-tab-btn active" id="tab-btn-code">
+        <span>💻 Ver Código</span>
+      </button>
+      <button class="view-tab-btn" id="tab-btn-preview">
+        <span>🚀 Vista Previa / Ejecución</span>
+      </button>
+    </div>
+
+    <!-- Barra de herramientas superior -->
+    <div class="viewer-toolbar">
+      <div class="file-breadcrumbs" id="breadcrumbs">
+        <span>Selecciona un fichero para comenzar</span>
+      </div>
+      
+      <div class="viewer-actions">
+        <span id="file-meta" style="font-size:0.8rem; color:var(--text-muted); margin-right:0.4rem;"></span>
+        <button class="btn btn-outline btn-sm" id="btn-theme" title="Alternar tema oscuro / claro">🌓 Tema</button>
+        <button class="btn btn-outline btn-sm" id="btn-copy" title="Copiar código al portapapeles">📋 Copiar</button>
+        <a class="btn btn-outline btn-sm" id="btn-raw" target="_blank" title="Abrir versión cruda (Raw)">⬇️ Raw</a>
+        <a class="btn btn-outline btn-sm" id="btn-github" target="_blank" title="Abrir en GitHub.com">🐙 GitHub</a>
+        <button class="btn btn-success btn-sm hidden" id="btn-launch-preview" title="Ejecutar en la pestaña de vista previa">▶ Ver Ejecución</button>
+        <a class="btn btn-primary btn-sm hidden" id="btn-open-external" target="_blank" title="Abrir página en vivo en nueva pestaña">🚀 Probar Web</a>
+      </div>
+    </div>
+
+    <!-- Spinner / Mensaje de Estado / Error -->
+    <div id="viewer-status" class="status-box">
+      <div class="spinner"></div>
+      <p>Cargando información del repositorio...</p>
+    </div>
+
+    <!-- MODO 1: Visor de Código con números de línea -->
+    <div class="code-wrapper hidden" id="code-wrapper">
+      <div class="code-container">
+        <div class="line-numbers" id="line-numbers">1</div>
+        <pre style="margin:0; flex:1;"><code id="code-content" class="code-content"></code></pre>
+      </div>
+    </div>
+
+    <!-- MODO 2: Ejecución interactiva / Vista previa en Sandbox -->
+    <div class="preview-wrapper hidden" id="preview-wrapper">
+      <div class="preview-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:0.85rem; font-weight:600; color:var(--primary);" id="preview-title">Proyecto en ejecución</span>
+          <button class="btn btn-outline btn-sm" id="btn-reload-preview" title="Recargar ejecución">🔄 Recargar</button>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div class="preview-device-buttons">
+            <button class="btn-device active" data-width="100%">100%</button>
+            <button class="btn-device" data-width="1024px">🖥️ Desktop</button>
+            <button class="btn-device" data-width="768px">📱 Tablet</button>
+            <button class="btn-device" data-width="375px">📱 Móvil</button>
+          </div>
+          <a class="btn btn-primary btn-sm" id="btn-preview-external" target="_blank">↗ Pestaña Externa</a>
+        </div>
+      </div>
+
+      <div class="preview-stage">
+        <div class="preview-frame-container" id="preview-frame-container">
+          <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-modals allow-forms"></iframe>
+          <div class="preview-console" id="preview-console">
+            <div class="console-header">
+              <span>Consola de Ejecución JS</span>
+              <span id="btn-clear-console" style="cursor:pointer; text-decoration:underline;">Limpiar</span>
+            </div>
+            <div id="console-logs"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Modal de Token de GitHub -->
+<div class="modal-overlay" id="modal-token">
+  <div class="modal-card">
+    <div class="card-header">
+      <h3>🔑 Token de GitHub (Opcional)</h3>
+      <button class="btn btn-sm btn-outline" onclick="toggleModal('modal-token', false)">✕</button>
+    </div>
+    <div class="card-body">
+      <p style="font-size:0.9rem; color:var(--text-muted); margin-top:0;">
+        GitHub permite 60 peticiones/hora a usuarios anónimos. Si has alcanzado el límite, puedes añadir un Personal Access Token (con permisos públicos de lectura) para obtener 5.000 peticiones/hora. Se guarda solo en tu navegador (<code>localStorage</code>).
+      </p>
+      <input type="password" id="input-token-val" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:6px; margin-bottom:1rem; font-family:var(--font-mono);">
+      <div style="display:flex; justify-content:space-between;">
+        <button class="btn btn-outline" id="btn-clear-token">Borrar Token</button>
+        <button class="btn btn-primary" id="btn-save-token">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Lista de Repositorios del Usuario -->
+<div class="modal-overlay" id="modal-repos">
+  <div class="modal-card" style="max-width:650px;">
+    <div class="card-header">
+      <h3 id="modal-repos-title">📦 Repositorios públicos</h3>
+      <button class="btn btn-sm btn-outline" onclick="toggleModal('modal-repos', false)">✕</button>
+    </div>
+    <div class="card-body" style="max-height:400px; overflow-y:auto;" id="modal-repos-list">
+      <div class="status-box"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de notificaciones -->
+<div class="toast" id="toast">Mensaje</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/markdown.min.js"></script>
+
+<script>
+  const state = {
+    owner: "escomz",
+    repo: "escomz.github.io",
+    branch: "main",
+    tree: [],
+    projects: {},
+    activeProject: null,
+    currentFile: null,
+    activeMode: "code",
+    themeDark: true,
+    token: localStorage.getItem("gh_token") || "",
+    currentHtmlTarget: null
+  };
+
+  const dom = {
+    inputRepo: document.getElementById("input-repo"),
+    selectBranch: document.getElementById("select-branch"),
+    btnLoadRepo: document.getElementById("btn-load-repo"),
+    headerDesc: document.getElementById("header-desc"),
+    projectList: document.getElementById("project-list"),
+    countProjects: document.getElementById("count-projects"),
+    fileTree: document.getElementById("file-tree"),
+    fileSearch: document.getElementById("file-search"),
+    breadcrumbs: document.getElementById("breadcrumbs"),
+    fileMeta: document.getElementById("file-meta"),
+    viewerStatus: document.getElementById("viewer-status"),
+    tabBtnCode: document.getElementById("tab-btn-code"),
+    tabBtnPreview: document.getElementById("tab-btn-preview"),
+    codeWrapper: document.getElementById("code-wrapper"),
+    codeContent: document.getElementById("code-content"),
+    lineNumbers: document.getElementById("line-numbers"),
+    previewWrapper: document.getElementById("preview-wrapper"),
+    previewFrame: document.getElementById("preview-frame"),
+    previewFrameContainer: document.getElementById("preview-frame-container"),
+    previewTitle: document.getElementById("preview-title"),
+    btnReloadPreview: document.getElementById("btn-reload-preview"),
+    btnPreviewExternal: document.getElementById("btn-preview-external"),
+    consoleLogs: document.getElementById("console-logs"),
+    btnClearConsole: document.getElementById("btn-clear-console"),
+    btnCopy: document.getElementById("btn-copy"),
+    btnRaw: document.getElementById("btn-raw"),
+    btnGithub: document.getElementById("btn-github"),
+    btnLaunchPreview: document.getElementById("btn-launch-preview"),
+    btnOpenExternal: document.getElementById("btn-open-external"),
+    btnTheme: document.getElementById("btn-theme"),
+    btnUserRepos: document.getElementById("btn-user-repos"),
+    btnToken: document.getElementById("btn-token"),
+    urlDirecta: document.getElementById("url-directa"),
+    btnCargarDirecta: document.getElementById("btn-cargar-directa"),
+    toast: document.getElementById("toast")
+  };
+
+  /* ── Utilidades de URL de GitHub Pages ── */
+
+  function getGitHubPagesUrl(owner, repo, relativePath) {
+    const isUserSite = repo.toLowerCase() === (owner.toLowerCase() + ".github.io");
+    const cleanPath = (relativePath || "").replace(/^\/+/, "");
+    const base = isUserSite
+      ? "https://" + owner + ".github.io"
+      : "https://" + owner + ".github.io/" + repo;
+    return cleanPath ? base + "/" + cleanPath : base + "/";
+  }
+
+  /* ── Inicialización del contexto ── */
+
+  function initContext() {
+    const params = new URLSearchParams(window.location.search);
+    const host = window.location.hostname;
+    const pathname = window.location.pathname;
+
+    let detectedOwner = "escomz";
+    let detectedRepo = "escomz.github.io";
+
+    if (host.endsWith(".github.io")) {
+      detectedOwner = host.split(".")[0];
+      const segments = pathname.split("/").filter(Boolean);
+      if (segments.length > 0 && !segments[0].endsWith(".html")) {
+        detectedRepo = segments[0];
+      } else {
+        detectedRepo = detectedOwner + ".github.io";
+      }
+    }
+
+    if (params.get("repo")) {
+      const r = params.get("repo");
+      if (r.includes("/")) {
+        const parts = r.split("/");
+        detectedOwner = parts[0];
+        detectedRepo = parts[1];
+      } else {
+        detectedRepo = r;
+      }
+    }
+    if (params.get("user") || params.get("owner")) {
+      detectedOwner = params.get("user") || params.get("owner");
+    }
+    if (params.get("branch")) {
+      state.branch = params.get("branch");
+    }
+
+    state.owner = detectedOwner;
+    state.repo = detectedRepo;
+    dom.inputRepo.value = state.owner + "/" + state.repo;
+
+    if (state.token) {
+      document.getElementById("input-token-val").value = state.token;
+    }
+  }
+
+  /* ── GitHub API ── */
+
+  async function githubApi(endpoint) {
+    const headers = { "Accept": "application/vnd.github.v3+json" };
+    if (state.token) {
+      headers["Authorization"] = "Bearer " + state.token;
+    }
+    const res = await fetch("https://api.github.com/" + endpoint, { headers });
+    if (!res.ok) {
+      if (res.status === 403) throw new Error("Límite de peticiones de GitHub alcanzado (Rate Limit). Configura un Token en 🔑 Token.");
+      if (res.status === 404) throw new Error("Repositorio o recurso no encontrado en GitHub.");
+      throw new Error("Error HTTP " + res.status + ": " + res.statusText);
+    }
+    return await res.json();
+  }
+
+  /* ── Carga de repositorio ── */
+
+  async function loadRepository(owner, repo) {
+    state.owner = owner;
+    state.repo = repo;
+    dom.inputRepo.value = owner + "/" + repo;
+    showStatus("Analizando estructura del repositorio...");
+
+    try {
+      const repoData = await githubApi("repos/" + owner + "/" + repo);
+      dom.headerDesc.textContent = repoData.description || ("Repositorio de " + owner + " (" + repoData.stargazers_count + " ⭐)");
+
+      const branchesData = await githubApi("repos/" + owner + "/" + repo + "/branches");
+      dom.selectBranch.innerHTML = "";
+      branchesData.forEach(function(b) {
+        const opt = document.createElement("option");
+        opt.value = b.name;
+        opt.textContent = b.name;
+        if (b.name === (state.branch || repoData.default_branch)) {
+          opt.selected = true;
+          state.branch = b.name;
+        }
+        dom.selectBranch.appendChild(opt);
+      });
+
+      await loadTree();
+    } catch (err) {
+      showError("No se pudo cargar el repositorio: " + err.message);
+    }
+  }
+
+  /* ── Árbol de ficheros ── */
+
+  async function loadTree() {
+    showStatus("Explorando ficheros en la rama '" + state.branch + "'...");
+    try {
+      const treeData = await githubApi("repos/" + state.owner + "/" + state.repo + "/git/trees/" + state.branch + "?recursive=1");
+      
+      state.tree = (treeData.tree || []).filter(function(item) {
+        if (item.type !== "blob") return false;
+        if (item.path.startsWith(".git/")) return false;
+        if (item.path.includes("node_modules/")) return false;
+        return true;
+      });
+
+      analyzeProjects();
+      renderProjects();
+
+      const params = new URLSearchParams(window.location.search);
+      const targetFile = params.get("f") || params.get("file");
+
+      if (targetFile) {
+        const found = state.tree.find(function(f) { return f.path === targetFile; });
+        if (found) {
+          selectProjectForFile(targetFile);
+          loadFile(targetFile);
+          return;
+        }
+      }
+
+      const projectKeys = Object.keys(state.projects).filter(function(k) { return k !== "Todos los archivos"; });
+      if (projectKeys.length > 0) {
+        selectProject(projectKeys[0]);
+      } else {
+        selectProject("Todos los archivos");
+      }
+    } catch (err) {
+      showError("Error al leer el árbol de ficheros: " + err.message);
+    }
+  }
+
+  function analyzeProjects() {
+    state.projects = { "Todos los archivos": state.tree.slice() };
+
+    state.tree.forEach(function(file) {
+      const parts = file.path.split("/");
+      var group = "Raíz / General";
+      if (parts.length > 1) {
+        group = parts[0];
+      }
+      if (!state.projects[group]) {
+        state.projects[group] = [];
+      }
+      state.projects[group].push(file);
+    });
+  }
+
+  /* ── Renderizar tarjetas de proyecto ── */
+
+  function renderProjects() {
+    dom.projectList.innerHTML = "";
+    const groups = Object.keys(state.projects);
+    dom.countProjects.textContent = groups.filter(function(g) { return g !== "Todos los archivos"; }).length;
+
+    groups.forEach(function(group) {
+      const files = state.projects[group];
+      const indexFile = files.find(function(f) { return f.path.endsWith("index.html"); });
+      
+      const card = document.createElement("div");
+      card.className = "project-card" + (state.activeProject === group ? " active" : "");
+      
+      const info = document.createElement("div");
+      info.className = "project-info";
+      
+      const title = document.createElement("div");
+      title.className = "project-name";
+      var icon = group === "Todos los archivos" ? "📂" : (group === "Raíz / General" ? "📄" : "🚀");
+      title.innerHTML = icon + " <strong>" + group + "</strong>";
+      
+      const meta = document.createElement("div");
+      meta.className = "project-meta";
+      meta.textContent = files.length + " archivo" + (files.length !== 1 ? "s" : "");
+
+      info.appendChild(title);
+      info.appendChild(meta);
+      card.appendChild(info);
+
+      // Botón ▶ Ver — lanza ejecución en el iframe
+      if (indexFile && group !== "Todos los archivos") {
+        const btnVer = document.createElement("button");
+        btnVer.className = "btn btn-success btn-sm";
+        btnVer.title = "Ver ejecución interactiva del proyecto";
+        btnVer.innerHTML = "▶ Ver";
+        
+        btnVer.onclick = function(e) {
+          e.stopPropagation();
+          selectProject(group);
+          launchExecution(indexFile.path);
+        };
+        card.appendChild(btnVer);
+      }
+
+      card.onclick = function() { selectProject(group); };
+      dom.projectList.appendChild(card);
+    });
+  }
+
+  function selectProject(groupName) {
+    state.activeProject = groupName;
+
+    Array.from(dom.projectList.children).forEach(function(el) {
+      var nameEl = el.querySelector(".project-name strong");
+      if (nameEl && nameEl.textContent === groupName) {
+        el.classList.add("active");
+      } else {
+        el.classList.remove("active");
+      }
+    });
+
+    renderFileList();
+  }
+
+  function selectProjectForFile(filePath) {
+    var parts = filePath.split("/");
+    var group = parts.length > 1 ? parts[0] : "Raíz / General";
+    if (state.projects[group]) {
+      selectProject(group);
+    }
+  }
+
+  /* ── Badges y lenguajes ── */
+
+  function getBadgeClass(filename) {
+    if (filename.endsWith(".ts")) return { class: "badge-ts", text: "TS" };
+    if (filename.endsWith(".js") || filename.endsWith(".mjs")) return { class: "badge-js", text: "JS" };
+    if (filename.endsWith(".html") || filename.endsWith(".htm")) return { class: "badge-html", text: "HTML" };
+    if (filename.endsWith(".css") || filename.endsWith(".scss")) return { class: "badge-css", text: "CSS" };
+    if (filename.endsWith(".json")) return { class: "badge-json", text: "JSON" };
+    if (filename.endsWith(".md")) return { class: "badge-md", text: "MD" };
+    return { class: "badge-other", text: filename.split(".").pop() || "FILE" };
+  }
+
+  function detectLanguage(filename) {
+    var ext = filename.split(".").pop().toLowerCase();
+    var map = {
+      ts: "typescript", tsx: "typescript",
+      js: "javascript", jsx: "javascript", mjs: "javascript", cjs: "javascript",
+      html: "xml", htm: "xml", xml: "xml", svg: "xml",
+      css: "css", scss: "css",
+      json: "json", md: "markdown", sh: "bash", bash: "bash",
+      py: "python", c: "c", h: "c", cpp: "cpp", hpp: "cpp",
+      java: "java", sql: "sql", yaml: "yaml", yml: "yaml"
+    };
+    return map[ext] || "plaintext";
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  /* ── Lista de archivos ── */
+
+  function renderFileList() {
+    dom.fileTree.innerHTML = "";
+    var filter = dom.fileSearch.value.trim().toLowerCase();
+    var files = state.projects[state.activeProject] || state.tree;
+    var filtered = files.filter(function(f) { return f.path.toLowerCase().includes(filter); });
+
+    if (filtered.length === 0) {
+      dom.fileTree.innerHTML = '<li class="status-box" style="padding:1.5rem;">No se encontraron archivos</li>';
+      return;
+    }
+
+    filtered.forEach(function(file) {
+      var li = document.createElement("li");
+      li.className = "file-item" + (state.currentFile === file.path ? " active" : "");
+      
+      var badge = getBadgeClass(file.path);
+      var displayPath = file.path;
+      if (state.activeProject !== "Todos los archivos" && state.activeProject !== "Raíz / General") {
+        if (displayPath.startsWith(state.activeProject + "/")) {
+          displayPath = displayPath.substring(state.activeProject.length + 1);
+        }
+      }
+
+      li.innerHTML =
+        '<div class="file-name-group" title="' + file.path + '">' +
+          '<span class="file-badge ' + badge.class + '">' + badge.text + '</span>' +
+          '<span>' + displayPath + '</span>' +
+        '</div>' +
+        '<span style="font-size:0.75rem; color:var(--text-muted);">' + formatBytes(file.size) + '</span>';
+
+      li.onclick = function() { loadFile(file.path, file.size); };
+      dom.fileTree.appendChild(li);
+    });
+
+    if (!state.currentFile && filtered.length > 0) {
+      loadFile(filtered[0].path, filtered[0].size);
+    }
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return "0 B";
+    var k = 1024;
+    var sizes = ["B", "KB", "MB"];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  }
+
+  /* ── Cargar y mostrar un fichero ── */
+
+  async function loadFile(filePath, fileSize) {
+    state.currentFile = filePath;
+
+    Array.from(dom.fileTree.querySelectorAll(".file-item")).forEach(function(item) {
+      var pathText = item.querySelector(".file-name-group");
+      if (pathText && pathText.getAttribute("title") === filePath) {
+        item.classList.add("active");
+      } else {
+        item.classList.remove("active");
+      }
+    });
+
+    updateBreadcrumbs(filePath);
+    var rawUrl = "https://raw.githubusercontent.com/" + state.owner + "/" + state.repo + "/" + state.branch + "/" + filePath;
+    var githubUrl = "https://github.com/" + state.owner + "/" + state.repo + "/blob/" + state.branch + "/" + filePath;
+    var externalPagesUrl = getGitHubPagesUrl(state.owner, state.repo, filePath);
+    
+    dom.btnRaw.href = rawUrl;
+    dom.btnGithub.href = githubUrl;
+
+    // Determinar si podemos mostrar ejecución
+    if (filePath.endsWith(".html")) {
+      dom.btnLaunchPreview.classList.remove("hidden");
+      dom.btnOpenExternal.classList.remove("hidden");
+      dom.btnOpenExternal.href = externalPagesUrl;
+      state.currentHtmlTarget = filePath;
+    } else {
+      var currentProjFiles = state.projects[state.activeProject] || [];
+      var projectIndex = currentProjFiles.find(function(f) { return f.path.endsWith("index.html"); });
+      if (projectIndex) {
+        dom.btnLaunchPreview.classList.remove("hidden");
+        dom.btnOpenExternal.classList.remove("hidden");
+        dom.btnOpenExternal.href = getGitHubPagesUrl(state.owner, state.repo, projectIndex.path);
+        state.currentHtmlTarget = projectIndex.path;
+      } else {
+        dom.btnLaunchPreview.classList.add("hidden");
+        dom.btnOpenExternal.classList.add("hidden");
+      }
+    }
+
+    showStatus("Descargando archivo...");
+
+    try {
+      var res = await fetch(rawUrl);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      var text = await res.text();
+
+      displayCode(text, filePath, fileSize || text.length);
+      
+      var newUrl = new URL(window.location);
+      newUrl.searchParams.set("user", state.owner);
+      newUrl.searchParams.set("repo", state.repo);
+      newUrl.searchParams.set("branch", state.branch);
+      newUrl.searchParams.set("f", filePath);
+      window.history.replaceState({}, "", newUrl);
+
+      if (state.activeMode === "preview" && filePath.endsWith(".html")) {
+        launchExecution(filePath);
+      }
+    } catch (err) {
+      showError("Error al descargar el fichero (" + rawUrl + "): " + err.message);
+    }
+  }
+
+  function displayCode(code, filePath, size) {
+    dom.viewerStatus.classList.add("hidden");
+    
+    if (state.activeMode === "code") {
+      dom.codeWrapper.classList.remove("hidden");
+      dom.previewWrapper.classList.add("hidden");
+    }
+
+    var lang = detectLanguage(filePath);
+    var highlightedHtml = "";
+
+    try {
+      if (typeof hljs !== "undefined") {
+        if (lang && lang !== "plaintext" && hljs.getLanguage && hljs.getLanguage(lang)) {
+          highlightedHtml = hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
+        } else if (hljs.highlightAuto) {
+          highlightedHtml = hljs.highlightAuto(code).value;
+        } else {
+          highlightedHtml = escapeHtml(code);
+        }
+      } else {
+        highlightedHtml = escapeHtml(code);
+      }
+    } catch (e) {
+      highlightedHtml = escapeHtml(code);
+    }
+
+    dom.codeContent.className = "code-content hljs language-" + (lang || "plaintext");
+    dom.codeContent.innerHTML = highlightedHtml;
+
+    var lines = code.split("\n").length;
+    var numbers = "";
+    for (var i = 1; i <= lines; i++) {
+      numbers += i + "\n";
+    }
+    dom.lineNumbers.textContent = numbers;
+    dom.fileMeta.textContent = lines + " líneas • " + formatBytes(size);
+  }
+
+  /* ── EJECUCIÓN INTERACTIVA EN IFRAME ── */
+
+  async function launchExecution(htmlPath) {
+    if (!htmlPath) {
+      htmlPath = state.currentHtmlTarget;
+    }
+    if (!htmlPath) {
+      showToast("No hay un archivo HTML seleccionado para ejecutar");
+      return;
+    }
+
+    state.currentHtmlTarget = htmlPath;
+    switchMode("preview");
+    
+    dom.previewTitle.textContent = "▶ Ejecutando: " + htmlPath;
+    dom.btnPreviewExternal.href = getGitHubPagesUrl(state.owner, state.repo, htmlPath);
+
+    clearConsole();
+    addConsoleLog("Iniciando entorno de ejecución interactiva...", "log");
+
+    try {
+      var baseDir = htmlPath.includes("/") ? htmlPath.substring(0, htmlPath.lastIndexOf("/")) : "";
+      var rawBase = "https://raw.githubusercontent.com/" + state.owner + "/" + state.repo + "/" + state.branch + "/";
+      var rawHtmlUrl = rawBase + htmlPath;
+      
+      var htmlRes = await fetch(rawHtmlUrl);
+      if (!htmlRes.ok) throw new Error("No se pudo cargar HTML (" + htmlRes.status + ")");
+      var htmlContent = await htmlRes.text();
+
+      // Script inyectado para capturar console.log/error dentro del iframe
+      var consoleScript =
+        '<script>' +
+        '(function() {' +
+        '  var origLog = console.log, origWarn = console.warn, origErr = console.error;' +
+        '  function send(type, args) {' +
+        '    var msg = Array.from(args).map(function(a) { return typeof a === "object" ? JSON.stringify(a) : String(a); }).join(" ");' +
+        '    window.parent.postMessage({ type: "CONSOLE_" + type.toUpperCase(), msg: msg }, "*");' +
+        '  }' +
+        '  console.log = function() { send("log", arguments); origLog.apply(console, arguments); };' +
+        '  console.warn = function() { send("warn", arguments); origWarn.apply(console, arguments); };' +
+        '  console.error = function() { send("error", arguments); origErr.apply(console, arguments); };' +
+        '  window.onerror = function(msg, url, line) { send("error", ["Error línea " + line + ": " + msg]); };' +
+        '})();' +
+        '<\/script>';
+
+      if (htmlContent.includes("<head>")) {
+        htmlContent = htmlContent.replace("<head>", "<head>" + consoleScript);
+      } else {
+        htmlContent = consoleScript + htmlContent;
+      }
+
+      // Resolver CSS relativos → inline <style>
+      var cssRegex = /<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
+      var cssMatch;
+      var cssReplacements = [];
+      while ((cssMatch = cssRegex.exec(htmlContent)) !== null) {
+        cssReplacements.push({ fullTag: cssMatch[0], href: cssMatch[1] });
+      }
+      for (var ci = 0; ci < cssReplacements.length; ci++) {
+        var cr = cssReplacements[ci];
+        if (!cr.href.startsWith("http://") && !cr.href.startsWith("https://")) {
+          var targetCssPath = baseDir ? baseDir + "/" + cr.href.replace(/^\.\//, "") : cr.href.replace(/^\.\//, "");
+          try {
+            var cssRes = await fetch(rawBase + targetCssPath);
+            if (cssRes.ok) {
+              var cssText = await cssRes.text();
+              htmlContent = htmlContent.replace(cr.fullTag, "<style>/* " + cr.href + " */\n" + cssText + "</style>");
+              addConsoleLog("CSS vinculado: " + cr.href, "log");
+            }
+          } catch(e) {}
+        }
+      }
+
+      // Resolver JS relativos → inline <script>
+      var jsRegex = /<script\s+[^>]*src=["']([^"']+)["'][^>]*>\s*<\/script>/gi;
+      var jsMatch;
+      var jsReplacements = [];
+      while ((jsMatch = jsRegex.exec(htmlContent)) !== null) {
+        jsReplacements.push({ fullTag: jsMatch[0], src: jsMatch[1] });
+      }
+      for (var ji = 0; ji < jsReplacements.length; ji++) {
+        var jr = jsReplacements[ji];
+        if (!jr.src.startsWith("http://") && !jr.src.startsWith("https://")) {
+          var targetJsPath = baseDir ? baseDir + "/" + jr.src.replace(/^\.\//, "") : jr.src.replace(/^\.\//, "");
+          try {
+            var jsRes = await fetch(rawBase + targetJsPath);
+            if (jsRes.ok) {
+              var jsText = await jsRes.text();
+              htmlContent = htmlContent.replace(jr.fullTag, "<script>/* " + jr.src + " */\n" + jsText + "\n<\/script>");
+              addConsoleLog("Script cargado: " + jr.src, "log");
+            }
+          } catch(e) {}
+        }
+      }
+
+      dom.previewFrame.srcdoc = htmlContent;
+      addConsoleLog("¡Proyecto renderizado y en ejecución!", "log");
+
+    } catch (err) {
+      addConsoleLog("Error al ejecutar: " + err.message, "error");
+      dom.previewFrame.srcdoc = '<div style="font-family:sans-serif; padding:2rem; color:#e63946;"><h3>Error de Ejecución</h3><p>' + err.message + '</p></div>';
+    }
+  }
+
+  window.addEventListener("message", function(event) {
+    if (event.data && event.data.type && event.data.type.startsWith("CONSOLE_")) {
+      var type = event.data.type === "CONSOLE_ERROR" ? "error" : "log";
+      addConsoleLog(event.data.msg, type);
+    }
+  });
+
+  function addConsoleLog(msg, type) {
+    var entry = document.createElement("div");
+    entry.className = "console-entry console-" + (type || "log");
+    entry.textContent = "[" + new Date().toLocaleTimeString() + "] " + msg;
+    dom.consoleLogs.appendChild(entry);
+    document.getElementById("preview-console").scrollTop = document.getElementById("preview-console").scrollHeight;
+  }
+
+  function clearConsole() {
+    dom.consoleLogs.innerHTML = "";
+  }
+
+  function switchMode(mode) {
+    state.activeMode = mode;
+    if (mode === "code") {
+      dom.tabBtnCode.classList.add("active");
+      dom.tabBtnPreview.classList.remove("active");
+      dom.codeWrapper.classList.remove("hidden");
+      dom.previewWrapper.classList.add("hidden");
+      dom.viewerStatus.classList.add("hidden");
+    } else {
+      dom.tabBtnCode.classList.remove("active");
+      dom.tabBtnPreview.classList.add("active");
+      dom.codeWrapper.classList.add("hidden");
+      dom.previewWrapper.classList.remove("hidden");
+      dom.viewerStatus.classList.add("hidden");
+    }
+  }
+
+  function updateBreadcrumbs(filePath) {
+    var parts = filePath.split("/");
+    var html = "<strong>" + state.owner + "</strong>" +
+      '<span class="sep">/</span>' +
+      "<strong>" + state.repo + "</strong>" +
+      '<span class="sep">/</span>';
+    parts.forEach(function(p, idx) {
+      if (idx === parts.length - 1) {
+        html += "<strong>" + p + "</strong>";
+      } else {
+        html += "<span>" + p + "</span>" + '<span class="sep">/</span>';
+      }
+    });
+    dom.breadcrumbs.innerHTML = html;
+  }
+
+  function showStatus(msg) {
+    dom.viewerStatus.classList.remove("hidden", "error");
+    dom.viewerStatus.innerHTML = '<div class="spinner"></div><p>' + msg + '</p>';
+    dom.codeWrapper.classList.add("hidden");
+    dom.previewWrapper.classList.add("hidden");
+  }
+
+  function showError(msg) {
+    dom.viewerStatus.classList.remove("hidden");
+    dom.viewerStatus.classList.add("error");
+    dom.viewerStatus.innerHTML =
+      '<p style="font-size:1.1rem; font-weight:bold; margin-bottom:0.5rem;">⚠️ No se pudo cargar</p>' +
+      '<p>' + msg + '</p>';
+    dom.codeWrapper.classList.add("hidden");
+    dom.previewWrapper.classList.add("hidden");
+  }
+
+  function showToast(msg) {
+    dom.toast.textContent = msg;
+    dom.toast.classList.add("show");
+    setTimeout(function() { dom.toast.classList.remove("show"); }, 2500);
+  }
+
+  function toggleModal(id, open) {
+    var modal = document.getElementById(id);
+    if (open) modal.classList.add("active");
+    else modal.classList.remove("active");
+  }
+
+  async function loadUserRepos() {
+    toggleModal("modal-repos", true);
+    var title = document.getElementById("modal-repos-title");
+    var container = document.getElementById("modal-repos-list");
+    title.textContent = "📦 Repositorios públicos de @" + state.owner;
+    container.innerHTML = '<div class="status-box"><div class="spinner"></div></div>';
+
+    try {
+      var repos = await githubApi("users/" + state.owner + "/repos?sort=updated&per_page=50");
+      if (repos.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">El usuario no tiene repositorios públicos.</p>';
+        return;
+      }
+
+      container.innerHTML = "";
+      repos.forEach(function(r) {
+        var item = document.createElement("div");
+        item.style.cssText = "padding:0.75rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
+        item.innerHTML =
+          '<div>' +
+            '<div style="font-weight:700; color:var(--primary); font-size:0.95rem;">' + r.name + (r.fork ? ' <span style="font-size:0.75rem; color:#888;">(fork)</span>' : '') + '</div>' +
+            '<div style="font-size:0.8rem; color:var(--text-muted);">' + (r.description || 'Sin descripción') + '</div>' +
+          '</div>' +
+          '<div style="display:flex; align-items:center; gap:0.5rem;">' +
+            '<span style="font-size:0.8rem; color:var(--text-muted);">${r.language || ""}</span>' +
+            '<button class="btn btn-primary btn-sm">Abrir</button>' +
+          '</div>';
+        item.onclick = function() {
+          toggleModal("modal-repos", false);
+          loadRepository(state.owner, r.name);
+        };
+        container.appendChild(item);
+      });
+    } catch (err) {
+      container.innerHTML = '<div class="status-box error">' + err.message + '</div>';
+    }
+  }
+
+  function parseGithubUrl(urlStr) {
+    var u = urlStr.trim();
+    if (!u) return null;
+
+    if (u.startsWith("https://raw.githubusercontent.com/")) {
+      var parts = u.replace("https://raw.githubusercontent.com/", "").split("/");
+      if (parts.length >= 4) {
+        return { owner: parts[0], repo: parts[1], branch: parts[2], file: parts.slice(3).join("/") };
+      }
+    }
+
+    var m = u.match(/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/);
+    if (m) {
+      return { owner: m[1], repo: m[2], branch: m[3], file: m[4] };
+    }
+
+    var mRepo = u.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (mRepo) {
+      return { owner: mRepo[1], repo: mRepo[2].replace(".git", ""), branch: "main", file: null };
+    }
+
+    return null;
+  }
+
+  /* ── Event Listeners ── */
+
+  dom.tabBtnCode.onclick = function() { switchMode("code"); };
+  dom.tabBtnPreview.onclick = function() {
+    switchMode("preview");
+    launchExecution();
+  };
+
+  dom.btnLaunchPreview.onclick = function() { launchExecution(); };
+  dom.btnReloadPreview.onclick = function() { launchExecution(); };
+  dom.btnClearConsole.onclick = function() { clearConsole(); };
+
+  document.querySelectorAll(".btn-device").forEach(function(btn) {
+    btn.onclick = function() {
+      document.querySelectorAll(".btn-device").forEach(function(b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      dom.previewFrameContainer.style.maxWidth = btn.getAttribute("data-width");
+    };
+  });
+
+  dom.btnLoadRepo.onclick = function() {
+    var val = dom.inputRepo.value.trim();
+    if (!val) return;
+    if (val.includes("/")) {
+      var parts = val.split("/");
+      loadRepository(parts[0], parts[1]);
+    } else {
+      loadRepository(val, val + ".github.io");
+    }
+  };
+
+  dom.inputRepo.onkeydown = function(e) {
+    if (e.key === "Enter") dom.btnLoadRepo.click();
+  };
+
+  dom.selectBranch.onchange = function() {
+    state.branch = dom.selectBranch.value;
+    loadTree();
+  };
+
+  dom.fileSearch.oninput = function() { renderFileList(); };
+
+  dom.btnCopy.onclick = function() {
+    if (!state.currentFile) return;
+    navigator.clipboard.writeText(dom.codeContent.textContent).then(function() {
+      showToast("¡Código copiado al portapapeles!");
+    });
+  };
+
+  dom.btnTheme.onclick = function() {
+    state.themeDark = !state.themeDark;
+    var themeLink = document.getElementById("theme-link");
+    var root = document.documentElement;
+
+    if (state.themeDark) {
+      themeLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css";
+      root.style.setProperty("--code-bg", "#0d1117");
+      root.style.setProperty("--code-text", "#e6edf3");
+      root.style.setProperty("--line-num-color", "#7d8590");
+      root.style.setProperty("--line-num-border", "#30363d");
+    } else {
+      themeLink.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
+      root.style.setProperty("--code-bg", "#f6f8fa");
+      root.style.setProperty("--code-text", "#24292f");
+      root.style.setProperty("--line-num-color", "#8c959f");
+      root.style.setProperty("--line-num-border", "#d0d7de");
+    }
+    showToast(state.themeDark ? "Tema oscuro activado" : "Tema claro activado");
+  };
+
+  dom.btnUserRepos.onclick = function() { loadUserRepos(); };
+  dom.btnToken.onclick = function() { toggleModal("modal-token", true); };
+
+  document.getElementById("btn-save-token").onclick = function() {
+    var val = document.getElementById("input-token-val").value.trim();
+    state.token = val;
+    if (val) localStorage.setItem("gh_token", val);
+    else localStorage.removeItem("gh_token");
+    toggleModal("modal-token", false);
+    showToast("Token de GitHub guardado");
+    loadTree();
+  };
+
+  document.getElementById("btn-clear-token").onclick = function() {
+    document.getElementById("input-token-val").value = "";
+    state.token = "";
+    localStorage.removeItem("gh_token");
+    toggleModal("modal-token", false);
+    showToast("Token eliminado");
+  };
+
+  dom.btnCargarDirecta.onclick = function() {
+    var parsed = parseGithubUrl(dom.urlDirecta.value);
+    if (!parsed) {
+      showToast("URL de GitHub no reconocida");
+      return;
+    }
+    if (parsed.owner !== state.owner || parsed.repo !== state.repo) {
+      state.branch = parsed.branch || "main";
+      loadRepository(parsed.owner, parsed.repo).then(function() {
+        if (parsed.file) loadFile(parsed.file);
+      });
+    } else {
+      if (parsed.branch && parsed.branch !== state.branch) {
+        state.branch = parsed.branch;
+        dom.selectBranch.value = parsed.branch;
+      }
+      if (parsed.file) loadFile(parsed.file);
+    }
+  };
+
+  dom.urlDirecta.onkeydown = function(e) {
+    if (e.key === "Enter") dom.btnCargarDirecta.click();
+  };
+
+  // Arranque inicial
+  initContext();
+  loadRepository(state.owner, state.repo);
+</script>
+</body>
+</html>
